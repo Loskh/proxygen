@@ -1,7 +1,7 @@
-#![feature(naked_functions)]
 #![allow(named_asm_labels)]
 #![allow(non_snake_case)]
-#![feature(asm_const)]
+#![allow(static_mut_refs)]
+#![allow(unsafe_op_in_unsafe_fn)]
 
 mod export_indices;
 mod intercepted_exports;
@@ -41,9 +41,9 @@ static mut THIS_HANDLE: Option<HMODULE> = None;
 static mut ORIG_DLL_HANDLE: Option<HMODULE> = None;
 
 // Original funcs
-#[no_mangle]
+#[unsafe(no_mangle)]
 static mut ORIGINAL_FUNCS: [FARPROC; TOTAL_EXPORTS] = [std::ptr::null_mut(); TOTAL_EXPORTS];
-#[no_mangle]
+#[unsafe(no_mangle)]
 static mut ORIG_FUNCS_PTR: *const FARPROC = std::ptr::null_mut();
 
 /// Indicates once we are ready to accept incoming calls to proxied functions
@@ -53,8 +53,8 @@ static mut PROXYGEN_READY: bool = false;
 //https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=registry
 const STRING_BUFF_SIZE: usize = 32767;
 
-#[no_mangle]
-pub unsafe extern "stdcall" fn DllMain(module: HMODULE, reason: u32, _res: *const c_void) -> i32 {
+#[unsafe(no_mangle)]
+pub unsafe extern "system" fn DllMain(module: HMODULE, reason: u32, _res: *const c_void) -> i32 {
     DisableThreadLibraryCalls(module);
     THIS_HANDLE = Some(module);
 
@@ -164,7 +164,7 @@ unsafe extern "system" fn init(_: *mut c_void) -> u32 {
 /// Call this before attempting to call a function in the proxied DLL
 /// 
 /// This will wait for proxygen to fully load up all the proxied function addresses before returning
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn wait_dll_proxy_init() {
     // NOTE TO SELF: DO NO PRINT STUFF IN HERE
     

@@ -103,7 +103,7 @@ impl ProxyTemplates {
             .filter(|x| !exclusions.contains(&x.cleaned))
             .map(|export_name| {
                 format!(
-                    "#[forward]\n#[export_name=\"{1}\"]\npub extern \"C\" fn {0}() {{}}\n",
+                    "#[forward]\n#[unsafe(export_name=\"{1}\")]\npub extern \"C\" fn {0}() {{}}\n",
                     export_name.cleaned, export_name.original
                 )
             })
@@ -174,7 +174,7 @@ pub fn create_proxy_project(
     std::fs::write(
         out_dir.join("rust-toolchain.toml"),
         // "[toolchain]\nchannel = \"nightly-2023-11-05\"",
-        "[toolchain]\nchannel = \"nightly\"",
+        "[toolchain]\nchannel = \"stable\"",
     )?;
     // std::fs::write(
     //     out_dir.join("build.rs"),
@@ -207,14 +207,11 @@ pub fn create_proxy_project(
 
     // Set the default target based on the DLL's arch
     println!(
-        "The generated project will use the {} target (can be changed in .cargo/config)",
+        "The generated project will use the {} target (can be changed in config.toml)",
         target
     );
-    if !out_dir.join(".cargo").exists() {
-        std::fs::create_dir(out_dir.join(".cargo"))?;
-    }
     std::fs::write(
-        out_dir.join(".cargo").join("config"),
+        out_dir.join("config.toml"),
         format!("[build]\ntarget = \"{}\"", target),
     )?;
 
